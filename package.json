@@ -1,0 +1,28 @@
+{
+  "name": "media-content-d-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "start-poller": "node ./utils/ecsPoller.js",
+    "start-all": "concurrently \"npm run start\" \"npm run start-poller\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0",
+    "bluebird": "^3.7.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "media-content-d-server": "file:",
+    "multer": "^1.4.5-lts.1",
+    "redis": "^4.7.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
