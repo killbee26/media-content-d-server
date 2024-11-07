@@ -3,7 +3,7 @@ const { s3 } = require('../config/awsConfig');
 const uploadFileToS3 = (file) => {
   const params = {
     Bucket: process.env.S3_BUCKET_TEMP,
-    Key: file.originalname,
+    Key: `uploads/${file.originalname}`,
     Body: file.buffer,
   };
 
