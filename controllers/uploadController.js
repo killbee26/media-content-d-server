@@ -5,7 +5,7 @@ const Video = require('../models/Video'); // Import Video model
 
 const uploadFile = async (req, res, next) => {
   try {
-    const file = req.file;
+    const file = req.file
     
     // Step 1: Upload to S3
     const result = await uploadFileToS3(file);
@@ -19,6 +19,13 @@ const uploadFile = async (req, res, next) => {
       low: `processed/640x360/${baseFileName}.mp4`,
     };
 
+    const video = new Video({
+      name: originalFileName,
+      originalS3Key: result.Key,
+      processedS3Keys: processedS3Keys,
+      status: 'pending',
+    });
+    await video.save();
     // Step 2: Add job to Redis queue
     const jobDetails = {
       s3Key: result.Key,
@@ -29,13 +36,7 @@ const uploadFile = async (req, res, next) => {
     await addToQueue(jobDetails);
 
     // Step 3: Save metadata to MongoDB
-    const video = new Video({
-      name: originalFileName,
-      originalS3Key: result.Key,
-      processedS3Keys: processedS3Keys,
-      status: 'pending',
-    });
-    await video.save();
+    
 
     // Step 4: Return response
     res.status(200).json({
