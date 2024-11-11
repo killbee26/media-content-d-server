@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const ecs = new AWS.ECS({region: process.env.AWS_REGION || 'eu-north-1'});
-
+const Video = require('../models/Video');
+const { default: mongoose } = require('mongoose');
 // Function to start an ECS task for a given job
 async function runEcsTask(job) {
     const params = {
@@ -66,16 +67,40 @@ async function runEcsTask(job) {
 }
 
 // Function to wait for multiple ECS tasks to complete by polling their statuses
+async function updateVideoStatus(taskArn, status) {
+    try {
+         mongoose.connection.on('connected', () => {
+            console.log('Connected to MongoDB check success');
+          });// Ensure connection before updating
+
+        const updatedVideo = await Video.findOneAndUpdate(
+            { ecsTaskArn: taskArn },
+            { status },
+            { new: true }
+        );
+        console.log('Updated Video:', updatedVideo);
+    } catch (error) {
+        console.error('Error updating video status:', error);
+    }
+}
+  
+
 async function waitForMultipleEcsTasksCompletion(taskArns) {
     const params = {
         cluster: 'VideoProcessCluster',
         tasks: taskArns, // Pass all task ARNs to describeTasks
     };
+    console.log(params.tasks);
 
     console.log(`Waiting for ECS tasks ${taskArns.join(', ')} to complete...`);
 
     let tasksCompleted = false;
     const completedTasks = new Set(); // Track completed tasks
+
+    // Set initial status to 'pending' for all tasks in the database
+    for (const taskArn of taskArns) {
+        await updateVideoStatus(taskArn, 'pending');
+    }
 
     while (completedTasks.size < taskArns.length) {
         // Poll the status of all tasks in a single request
@@ -83,18 +108,26 @@ async function waitForMultipleEcsTasksCompletion(taskArns) {
 
         for (const task of taskResponse.tasks) {
             const taskArn = task.taskArn;
+            console.log("Task arn in for loop: ",taskArn)
             const taskStatus = task.lastStatus;
 
             console.log(`ECS Task ${taskArn} status: ${taskStatus}`);
+
+            // Update status to 'running' if task is in 'RUNNING' state
+            if (taskStatus === 'RUNNING' && !completedTasks.has(taskArn)) {
+                await updateVideoStatus(taskArn, 'running');
+            }
 
             // If the task has stopped, handle its result
             if (taskStatus === 'STOPPED' && !completedTasks.has(taskArn)) {
                 const exitCode = task.containers[0].exitCode;
                 if (exitCode === 0) {
                     console.log(`ECS Task ${taskArn} completed successfully.`);
+                    await updateVideoStatus(taskArn, 'finished'); // Mark as 'finished' in the database
                     completedTasks.add(taskArn); // Mark task as completed
                 } else {
                     console.error(`ECS Task ${taskArn} failed with exit code ${exitCode}.`);
+                    await updateVideoStatus(taskArn, 'failed'); // Optionally mark as 'failed' if needed
                     throw new Error(`ECS Task ${taskArn} failed.`);
                 }
             }

@@ -9,7 +9,13 @@ const videoSchema = new mongoose.Schema({
     low: { type: String, required: true }
   }, // Store different processed resolutions or formats here
   uploadedAt: { type: Date, default: Date.now },
-  status: { type: String, default: 'pending' } // Optional: for tracking processing status
+  thumbnailUrl: String,
+  status: {
+    type: String,
+    enum: ['pending', 'running', 'finished', 'failed'], // Enum for tracking processing status
+    default: 'pending'
+  },
+  ecsTaskArn: { type: String, required: true }, // Store ECS task ARN to associate task with the video
 });
 
 const Video = mongoose.model('Video', videoSchema);

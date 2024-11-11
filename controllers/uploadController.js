@@ -24,6 +24,8 @@ const uploadFile = async (req, res, next) => {
       originalS3Key: result.Key,
       processedS3Keys: processedS3Keys,
       status: 'pending',
+      thumbnailUrl: null,
+      ecsTaskArn: ' ',
     });
     await video.save();
     // Step 2: Add job to Redis queue

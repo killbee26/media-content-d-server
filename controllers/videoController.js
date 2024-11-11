@@ -28,10 +28,13 @@ const getAllVideos = async (req, res, next) => {
             medium: await getSignedUrl(video.processedS3Keys.medium),
             low: await getSignedUrl(video.processedS3Keys.low),
           },
-          uploadDate: video.uploadDate,
+          uploadDate: video.uploadedAt,
         };
       })
     );
+
+    // Log the response data to verify uploadDate
+    console.log("Videos with signed URLs:", videosWithSignedUrls);
 
     res.status(200).json(videosWithSignedUrls);
   } catch (err) {

@@ -30,6 +30,8 @@ try {
 mongoose.connect('mongodb://localhost:27017/media-content-delivery', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 20000, // Wait up to 20 seconds for a connection
+  socketTimeoutMS: 45000,     
 });
 mongoose.connection.on('connected', () => {
   console.log('Connected to MongoDB');
@@ -37,3 +39,9 @@ mongoose.connection.on('connected', () => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+mongoose.set('debug', true);
+
+
+mongoose.connection.on('error', (err) => console.error('Mongoose connection error:', err));
+mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected'));
